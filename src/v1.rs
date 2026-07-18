@@ -93,7 +93,12 @@ impl UuidV1 {
 
         // node to bytes
         //node: 0x9F 6B DE CE D8 46 u64,
-        let node: [u8; 8] = cx.node.to_le_bytes();
+        let mut node: [u8; 8] = cx.node.to_le_bytes();
+
+        // After generating the 48-bit fully randomized node value,
+        //implementations MUST set the least significant bit of the
+        // first octet of the Node ID to 1 (RFC9562 6.10.)
+        node[0] |= 0x01;
         let node = [node[5], node[4], node[3], node[2], node[1], node[0]];
 
         UuidV1 {
