@@ -4,7 +4,7 @@ use std::{
 };
 
 use bytes::{Buf, BufMut, BytesMut};
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 struct V1Context {
     previous_timestamp: AtomicU64,
@@ -35,8 +35,6 @@ pub struct UuidV1 {
 }
 const _: () = assert!(size_of::<UuidV1>() == 16);
 
-const BASE_TIME: &str = "2012-12-12T12:12:12Z";
-
 thread_local! {
     static CTX: LazyCell<V1Context> = LazyCell::new(|| {
         let mut time_stamp = [0u8; 2];
@@ -55,10 +53,12 @@ thread_local! {
 
 impl UuidV1 {
     pub fn generate() -> Self {
-        // get current time
-        // calc count of timestamp
-        let base_time = BASE_TIME.parse::<DateTime<Utc>>().unwrap();
-        let time_count = ((Utc::now() - base_time).num_nanoseconds().unwrap() / 100) as u64;
+        // Unix time 1970-01-01 00:00:00
+        // Gregorian 1582-10-15 00:00:00
+        // diff 12_219_292_800 sec
+        let now = Utc::now();
+        let time_count = (now.timestamp() + 12_219_292_800) as u64 * 10_000_000
+            + (now.timestamp_subsec_nanos() / 100) as u64;
 
         CTX.with(|cx| Self::new(time_count, cx))
     }
@@ -172,8 +172,6 @@ impl UuidV1 {
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
-
     use crate::v1::*;
 
     #[test]
@@ -226,17 +224,6 @@ mod tests {
         };
 
         assert_eq!(uuid.clock_seq(), 0b0011_0110_1001_1101);
-    }
-
-    #[test]
-    fn test_chr() {
-        let dt: DateTime<Utc> = Utc.with_ymd_and_hms(2015, 5, 15, 0, 0, 0).unwrap();
-        assert_eq!(dt.timestamp(), 1431648000);
-
-        // January 1, 1970 0:00:00 UTC (aka “UNIX timestamp”).
-        let dt_origin: DateTime<Utc> = Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap();
-        let diff = (dt - dt_origin).num_seconds() as u64;
-        assert_eq!(diff, 1431648000);
     }
 
     // # Test case
