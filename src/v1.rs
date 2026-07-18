@@ -86,7 +86,7 @@ impl UuidV1 {
 
         // concat variant with clock_seq
         // 0000_0000_0000_0000
-        let variant_with_clock_seq = clock_seq.wrapping_add(0b1000_0000_0000_0000);
+        let variant_with_clock_seq = (clock_seq & 0x3FFF) | 0x8000;
 
         // update timestamp
         cx.previous_timestamp.store(time_count, Ordering::Release);
