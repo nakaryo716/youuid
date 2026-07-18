@@ -77,7 +77,7 @@ impl UuidV1 {
         // version(0b0001) + time_high
         let version_with_time_high = time_high_off.wrapping_add(0x1000);
 
-        if time_count < cx.previous_timestamp.load(Ordering::Acquire) {
+        if time_count <= cx.previous_timestamp.load(Ordering::Acquire) {
             cx.clock_seq.fetch_add(1, Ordering::Relaxed);
         }
 
