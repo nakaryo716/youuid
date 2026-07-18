@@ -106,14 +106,20 @@ impl UuidV1 {
     }
 
     pub fn output(&self) -> String {
-        let a = format!("{:x}", self.time_low).to_uppercase();
-        let b = format!("{:x}", self.time_mid).to_uppercase();
-        let c = format!("{:x}", self.version_with_time_high).to_uppercase();
-        let d = format!("{:x}", self.variant_with_clock_seq).to_uppercase();
+        // 4hexOctet -> 32 bits -> 32 / 4 = 8 hex digit
+        let a = format!("{:08x}", self.time_low).to_uppercase();
+        // 2hexOctet -> 16 bits -> 16 / 4 = 4 hex digit
+        let b = format!("{:04x}", self.time_mid).to_uppercase();
+        // 2hexOctet -> 16 bits -> 16 / 4 = 4 hex digit
+        let c = format!("{:04x}", self.version_with_time_high).to_uppercase();
+        // 2hexOctet -> 16 bits -> 16 / 4 = 4 hex digit
+        let d = format!("{:04x}", self.variant_with_clock_seq).to_uppercase();
 
         let mut e = String::new();
         for elm in self.node {
-            e.push_str(&format!("{:x}", elm).to_uppercase());
+            // each elm
+            // 1hexOctet -> 8bit -> 8 / 4 = 2 hex digit
+            e.push_str(&format!("{:02x}", elm).to_uppercase());
         }
 
         format!("{}-{}-{}-{}-{}", a, b, c, d, e)
