@@ -98,7 +98,7 @@ impl UuidV1 {
         // After generating the 48-bit fully randomized node value,
         //implementations MUST set the least significant bit of the
         // first octet of the Node ID to 1 (RFC9562 6.10.)
-        node[0] |= 0x01;
+        node[5] |= 0x01;
         let node = [node[5], node[4], node[3], node[2], node[1], node[0]];
 
         UuidV1 {
@@ -261,6 +261,20 @@ mod tests {
 
         let uuid = UuidV1::new(timecount, &cx);
         assert_eq!(uuid.output(), "C232AB00-9414-11EC-B3C8-9F6BDECED846")
+    }
+
+    #[test]
+    fn test_node_id_auto_correction() {
+        let timecount = 0x1EC_9414_C232AB00;
+        let cx = V1Context {
+            previous_timestamp: AtomicU64::new(0),
+            clock_seq: AtomicU16::new(0x33C8),
+            node: 0x9E_6B_DE_CE_D8_46u64,
+        };
+
+        let uuid = UuidV1::new(timecount, &cx);
+
+        assert_eq!(uuid.output(), "C232AB00-9414-11EC-B3C8-9F6BDECED846");
     }
 
     #[test]
