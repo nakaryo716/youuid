@@ -29,8 +29,8 @@ impl UuidV3 {
         let hash = hasher.finalize();
 
         let md5_high = hash[..6].try_into().unwrap();
-        let md5_mid = hash[6..8].iter().as_slice().try_get_u16().unwrap();
-        let md5_low = hash[8..].iter().as_slice().try_get_u64().unwrap();
+        let md5_mid = u16::from_be_bytes(hash[6..8].try_into().unwrap());
+        let md5_low = u64::from_be_bytes(hash[8..].try_into().unwrap());
 
         let ver_with_md5_mid = (md5_mid & 0x0FFF) | 0x3000;
         let var_with_md5_low = (md5_low & 0x3FFF_FFFF_FFFF_FFFF) | 0x8000_0000_0000_0000;
