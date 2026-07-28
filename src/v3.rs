@@ -13,6 +13,7 @@ use md5::{Digest, Md5};
 // |                            md5_low                            |
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct UuidV3 {
     md5_high: [u8; 6],
     ver_with_md5_mid: u16,
