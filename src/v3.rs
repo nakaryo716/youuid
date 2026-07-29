@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use bytes::Buf;
 use md5::{Digest, Md5};
 
@@ -64,7 +66,7 @@ impl UuidV3 {
     //            2hexOctet "-"
     //            2hexOctet "-"
     //            6hexOctet
-    pub fn output(&self) -> String {
+    fn output(&self) -> String {
         let a = self.md5_high[..4].iter().as_slice().try_get_u32().unwrap();
         let b = self.md5_high[4..].iter().as_slice().try_get_u16().unwrap();
         let c = self.ver_with_md5_mid;
@@ -80,6 +82,12 @@ impl UuidV3 {
         }
 
         format!("{:08x}-{:04x}-{:04x}-{:04x}-{}", a, b, c, d, e)
+    }
+}
+
+impl Display for UuidV3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.output())
     }
 }
 
@@ -137,6 +145,6 @@ mod tests {
         assert_eq!(v3.md5_low(), 0x8a72f4a814cf09e);
 
         // final output
-        assert_eq!(v3.output(), "5df41881-3aed-3515-88a7-2f4a814cf09e");
+        assert_eq!(v3.to_string(), "5df41881-3aed-3515-88a7-2f4a814cf09e");
     }
 }
