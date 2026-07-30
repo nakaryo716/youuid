@@ -24,6 +24,11 @@ pub struct UuidV3 {
 
 const _: () = assert!(size_of::<UuidV3>() == 16);
 
+const MD5_MID_MASK: u16 = 0x0FFF;
+const VERSION_3: u16 = 0x3000;
+const MD5_LOW_MASK: u64 = 0x3FFF_FFFF_FFFF_FFFF;
+const VARIANT_RFC4122: u64 = 0x8000_0000_0000_0000;
+
 impl UuidV3 {
     pub fn new(namespace_id: &[u8; 16], name: &str) -> Self {
         let mut hasher = Md5::new();
@@ -35,8 +40,8 @@ impl UuidV3 {
         let md5_mid = u16::from_be_bytes(hash[6..8].try_into().unwrap());
         let md5_low = u64::from_be_bytes(hash[8..].try_into().unwrap());
 
-        let ver_with_md5_mid = (md5_mid & 0x0FFF) | 0x3000;
-        let var_with_md5_low = (md5_low & 0x3FFF_FFFF_FFFF_FFFF) | 0x8000_0000_0000_0000;
+        let ver_with_md5_mid = (md5_mid & MD5_MID_MASK) | VERSION_3;
+        let var_with_md5_low = (md5_low & MD5_LOW_MASK) | VARIANT_RFC4122;
 
         Self {
             md5_high,
