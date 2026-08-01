@@ -1,4 +1,5 @@
-use bytes::Buf;
+use std::fmt::Display;
+
 use md5::{Digest, Md5};
 
 // 0                   1                   2                   3
@@ -12,6 +13,8 @@ use md5::{Digest, Md5};
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // |                            md5_low                            |
 // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct UuidV3 {
     md5_high: [u8; 6],
     ver_with_md5_mid: u16,
@@ -19,6 +22,11 @@ pub struct UuidV3 {
 }
 
 const _: () = assert!(size_of::<UuidV3>() == 16);
+
+const MD5_MID_MASK: u16 = 0x0FFF;
+const VERSION_3: u16 = 0x3000;
+const MD5_LOW_MASK: u64 = 0x3FFF_FFFF_FFFF_FFFF;
+const VARIANT_RFC4122: u64 = 0x8000_0000_0000_0000;
 
 impl UuidV3 {
     pub fn new(namespace_id: &[u8; 16], name: &str) -> Self {
@@ -28,11 +36,11 @@ impl UuidV3 {
         let hash = hasher.finalize();
 
         let md5_high = hash[..6].try_into().unwrap();
-        let md5_mid = hash[6..8].iter().as_slice().try_get_u16().unwrap();
-        let md5_low = hash[8..].iter().as_slice().try_get_u64().unwrap();
+        let md5_mid = u16::from_be_bytes(hash[6..8].try_into().unwrap());
+        let md5_low = u64::from_be_bytes(hash[8..].try_into().unwrap());
 
-        let ver_with_md5_mid = (md5_mid & 0x0FFF) | 0x3000;
-        let var_with_md5_low = (md5_low & 0x3FFF_FFFF_FFFF_FFFF) | 0x8000_0000_0000_0000;
+        let ver_with_md5_mid = (md5_mid & MD5_MID_MASK) | VERSION_3;
+        let var_with_md5_low = (md5_low & MD5_LOW_MASK) | VARIANT_RFC4122;
 
         Self {
             md5_high,
@@ -62,22 +70,28 @@ impl UuidV3 {
     //            2hexOctet "-"
     //            2hexOctet "-"
     //            6hexOctet
-    pub fn output(&self) -> String {
-        let a = self.md5_high[..4].iter().as_slice().try_get_u32().unwrap();
-        let b = self.md5_high[4..].iter().as_slice().try_get_u16().unwrap();
-        let c = self.ver_with_md5_mid;
+    fn output(&self) -> String {
+        // 6 byte
+        // 2 char * 6 byte = 12 char
+        let hi = self
+            .md5_high
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>();
+        let (a, b) = hi.split_at(8);
 
-        let byte = self.var_with_md5_low.to_be_bytes();
-        let remain_bytes: [u8; 6] = byte[2..].try_into().unwrap();
+        // 8 byte
+        // 2 char * 8 byte = 16 char
+        let low = format!("{:016x}", self.var_with_md5_low);
+        let (c, d) = low.split_at(4);
 
-        let d = byte[..2].iter().as_slice().try_get_u16().unwrap();
+        format!("{}-{}-{:04x}-{}-{}", a, b, self.ver_with_md5_mid, c, d)
+    }
+}
 
-        let mut e = String::new();
-        for i in remain_bytes {
-            e.push_str(format!("{:02x}", i).as_str());
-        }
-
-        format!("{:08x}-{:04x}-{:04x}-{:04x}-{}", a, b, c, d, e)
+impl Display for UuidV3 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.output())
     }
 }
 
@@ -135,6 +149,6 @@ mod tests {
         assert_eq!(v3.md5_low(), 0x8a72f4a814cf09e);
 
         // final output
-        assert_eq!(v3.output(), "5df41881-3aed-3515-88a7-2f4a814cf09e");
+        assert_eq!(v3.to_string(), "5df41881-3aed-3515-88a7-2f4a814cf09e");
     }
 }
