@@ -1,6 +1,5 @@
 use std::fmt::Display;
 
-use bytes::Buf;
 use md5::{Digest, Md5};
 
 // 0                   1                   2                   3
@@ -72,21 +71,21 @@ impl UuidV3 {
     //            2hexOctet "-"
     //            6hexOctet
     fn output(&self) -> String {
-        let a = self.md5_high[..4].iter().as_slice().try_get_u32().unwrap();
-        let b = self.md5_high[4..].iter().as_slice().try_get_u16().unwrap();
-        let c = self.ver_with_md5_mid;
+        // 6 byte
+        // 2 char * 6 byte = 12 char
+        let hi = self
+            .md5_high
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>();
+        let (a, b) = hi.split_at(8);
 
-        let byte = self.var_with_md5_low.to_be_bytes();
-        let remain_bytes: [u8; 6] = byte[2..].try_into().unwrap();
+        // 8 byte
+        // 2 char * 8 byte = 16 char
+        let low = format!("{:016x}", self.var_with_md5_low);
+        let (c, d) = low.split_at(4);
 
-        let d = byte[..2].iter().as_slice().try_get_u16().unwrap();
-
-        let mut e = String::new();
-        for i in remain_bytes {
-            e.push_str(format!("{:02x}", i).as_str());
-        }
-
-        format!("{:08x}-{:04x}-{:04x}-{:04x}-{}", a, b, c, d, e)
+        format!("{}-{}-{:04x}-{}-{}", a, b, self.ver_with_md5_mid, c, d)
     }
 }
 
