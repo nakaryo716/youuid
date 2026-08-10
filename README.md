@@ -7,13 +7,13 @@ used to identify information in computer systems.
 ## Features
 - [x] UUID version1
 - [x] UUID version3
-- [ ] UUID version4
+- [x] UUID version4
 - [ ] UUID version6
 - [ ] UUID version7
 - [ ] UUID version8
 
 ## Refs
-Reffering to [RFC](https://datatracker.ietf.org/doc/html/rfc9562)
+Referring to [RFC](https://datatracker.ietf.org/doc/html/rfc9562)
 
 ## Caution
 This library is intended for educational purposes.  
